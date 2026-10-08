@@ -19,78 +19,94 @@ paths:
                 properties:
                   status: { type: string, const: ok }
                   service: { type: string, const: zhize-api }
-  /api/v1/verify:
+  /api/v1/search:
     post:
-      summary: 请求 AI 引擎核验问题及来源
+      summary: 创建搜索任务
+      description: 搜索结果由配置的 AI 引擎提供；后端不会自行生成搜索结果。
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VerificationRequest"
+              $ref: "#/components/schemas/SearchRequest"
       responses:
-        "200":
-          description: 核验结果
+        "202":
+          description: 搜索任务已接受
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/VerificationResponse"
+                $ref: "#/components/schemas/SearchAccepted"
         "422":
           description: 请求格式无效
-        "503":
-          description: AI 引擎不可用
-        "502":
-          description: AI 引擎返回无效响应
+  /api/v1/search/{task_id}:
+    get:
+      summary: 获取搜索任务状态和结果
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: 任务状态、结果或错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchTask"
+        "404":
+          description: 搜索任务不存在
 components:
   schemas:
-    Source:
+    SearchRequest:
       type: object
-      required: [id, title, snippet]
+      required: [query]
+      additionalProperties: false
+      properties:
+        query: { type: string, minLength: 1, maxLength: 4000 }
+        limit: { type: integer, minimum: 1, maximum: 50, default: 10 }
+    SearchAccepted:
+      type: object
+      required: [task_id, status]
+      properties:
+        task_id: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [queued, running, completed, failed]
+    SearchTask:
+      type: object
+      required: [task_id, query, status, results]
+      properties:
+        task_id: { type: string, format: uuid }
+        query: { type: string }
+        status:
+          type: string
+          enum: [queued, running, completed, failed]
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/SearchResult" }
+        error: { type: string }
+    SearchResult:
+      type: object
+      required:
+        - id
+        - title
+        - url
+        - source_name
+        - snippet
+        - evidence
+        - match_reason
+        - verdict
+        - confidence
       properties:
         id: { type: string, minLength: 1 }
         title: { type: string, minLength: 1 }
-        url: { type: [string, "null"], format: uri }
+        url: { type: string, minLength: 1, format: uri }
+        source_name: { type: string, minLength: 1 }
         snippet: { type: string }
+        evidence: { type: string }
+        match_reason: { type: string }
+        verdict:
+          type: string
+          enum: [supports, contradicts, context, unverified]
+        confidence: { type: number, minimum: 0, maximum: 1 }
         published_at: { type: [string, "null"], format: date-time }
-    VerificationRequest:
-      type: object
-      required: [question]
-      properties:
-        question: { type: string, minLength: 1, maxLength: 4000 }
-        sources:
-          type: array
-          maxItems: 50
-          items: { $ref: "#/components/schemas/Source" }
-    Claim:
-      type: object
-      required: [text, verdict, confidence]
-      properties:
-        text: { type: string }
-        verdict:
-          type: string
-          enum: [supported, mixed, refuted, insufficient_evidence]
-        confidence: { type: number, minimum: 0, maximum: 1 }
-    Citation:
-      type: object
-      required: [source_id, quote]
-      properties:
-        source_id: { type: string }
-        quote: { type: string }
-        url: { type: [string, "null"], format: uri }
-        title: { type: [string, "null"] }
-    VerificationResponse:
-      type: object
-      required: [verdict, summary, confidence, claims, citations]
-      properties:
-        verdict:
-          type: string
-          enum: [supported, mixed, refuted, insufficient_evidence]
-        summary: { type: string }
-        confidence: { type: number, minimum: 0, maximum: 1 }
-        claims:
-          type: array
-          items: { $ref: "#/components/schemas/Claim" }
-        citations:
-          type: array
-          items: { $ref: "#/components/schemas/Citation" }
-
