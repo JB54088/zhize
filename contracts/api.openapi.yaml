@@ -97,6 +97,9 @@ components:
         - match_reason
         - verdict
         - confidence
+        - deadline_status
+        - official_source_status
+        - evidence_status
       properties:
         id: { type: string, minLength: 1 }
         title: { type: string, minLength: 1 }
@@ -110,3 +113,12 @@ components:
           enum: [supports, contradicts, context, unverified]
         confidence: { type: number, minimum: 0, maximum: 1 }
         published_at: { type: [string, "null"] }
+        deadline_status:
+          type: string
+          enum: [expired, not_expired, not_stated, unverified]
+        official_source_status:
+          type: string
+          enum: [verified, unverified]
+        evidence_status:
+          type: string
+          enum: [available, missing]

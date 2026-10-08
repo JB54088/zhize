@@ -29,6 +29,16 @@ class ApiTests(unittest.TestCase):
             )
         self.assertEqual(response.status_code, 503)
         self.assertIn("SEARCH_PROVIDER=tavily", response.json()["detail"])
+        self.assertNotIn("results", response.json())
+
+    def test_search_without_tavily_key_returns_no_results(self):
+        with patch.dict(os.environ, {"SEARCH_PROVIDER": "tavily"}, clear=True):
+            response = self.client.post(
+                "/api/v1/search", json={"query": "test search"}
+            )
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("TAVILY_API_KEY", response.json()["detail"])
+        self.assertNotIn("results", response.json())
 
     def test_search_returns_provider_sources_with_grounded_fields(self):
         class ProviderStub:
@@ -59,6 +69,9 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(result["source_name"], "example.org")
         self.assertEqual(result["evidence"], "The decision process was reviewed.")
         self.assertEqual(result["verdict"], "context")
+        self.assertEqual(result["deadline_status"], "not_stated")
+        self.assertEqual(result["official_source_status"], "unverified")
+        self.assertEqual(result["evidence_status"], "available")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ class Settings:
     search_api_key: str
     search_base_url: str
     search_timeout_seconds: float
+    official_source_domains: tuple[str, ...]
     llm_api_key: str
     llm_model: str
     llm_base_url: str
@@ -24,6 +25,11 @@ class Settings:
             search_timeout_seconds=_positive_float(
                 os.getenv("SEARCH_TIMEOUT_SECONDS", "30"), 30.0
             ),
+            official_source_domains=tuple(
+                domain.strip().lower().removeprefix("www.").strip(".")
+                for domain in os.getenv("OFFICIAL_SOURCE_DOMAINS", "").split(",")
+                if domain.strip()
+            ),
             llm_api_key=os.getenv("LLM_API_KEY", "").strip(),
             llm_model=os.getenv("LLM_MODEL", "").strip(),
             llm_base_url=os.getenv(
@@ -38,4 +44,3 @@ def _positive_float(value: str, fallback: float) -> float:
     except (TypeError, ValueError):
         return fallback
     return parsed if parsed > 0 else fallback
-

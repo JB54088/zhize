@@ -1,5 +1,6 @@
 import hashlib
 import re
+from datetime import date
 from typing import Any, Optional
 from urllib.parse import urlparse
 
@@ -7,7 +8,10 @@ from .schemas import SearchResult
 
 
 def clean_and_ground_results(
-    query: str, raw_results: list[dict[str, Any]], limit: int
+    query: str,
+    raw_results: list[dict[str, Any]],
+    limit: int,
+    official_source_domains: tuple[str, ...] = (),
 ) -> list[SearchResult]:
     """小洗: normalize provider records and retain only source-grounded content."""
     cleaned: list[SearchResult] = []
@@ -60,6 +64,11 @@ def clean_and_ground_results(
                 verdict=verdict,
                 confidence=confidence,
                 published_at=_clean_optional_text(item.get("published_date")),
+                deadline_status=_deadline_status(content),
+                official_source_status=_official_source_status(
+                    parsed.hostname or "", official_source_domains
+                ),
+                evidence_status="available" if evidence else "missing",
             )
         )
         if len(cleaned) >= limit:
@@ -85,6 +94,7 @@ def apply_grounded_annotations(
             result.verdict = "unverified"
             result.confidence = 0.0
             result.evidence = ""
+            result.evidence_status = "missing"
             result.match_reason = "模型未能提供与检索来源正文完全一致的证据；当前无法核验。"
             continue
 
@@ -97,6 +107,7 @@ def apply_grounded_annotations(
             continue
 
         result.evidence = quote
+        result.evidence_status = "available"
         result.verdict = verdict
         result.confidence = confidence
         result.match_reason = {
@@ -121,6 +132,64 @@ def _provider_text(value: Any) -> str:
 def _clean_optional_text(value: Any) -> Optional[str]:
     text = _clean_text(value)
     return text or None
+
+
+def _official_source_status(
+    hostname: str, configured_domains: tuple[str, ...]
+) -> str:
+    host = hostname.lower().removeprefix("www.").rstrip(".")
+    if host.endswith((".gov", ".gov.cn", ".mil")):
+        return "verified"
+    if any(host == domain or host.endswith(f".{domain}") for domain in configured_domains):
+        return "verified"
+    return "unverified"
+
+
+def _deadline_status(content: str, today: date | None = None) -> str:
+    cues = (
+        "截止", "截至", "有效期至", "最后申请日期", "最后报名日期",
+        "deadline", "due date", "expires on", "expiration date", "closes on",
+    )
+    lowered = content.lower()
+    positions = [position for cue in cues if (position := lowered.find(cue)) >= 0]
+    if not positions:
+        return "not_stated"
+
+    dates = _source_dates(content)
+    if not dates:
+        return "unverified"
+
+    # Require an explicit deadline cue and a date close to it. This avoids
+    # treating an unrelated publication date as an expiry date.
+    nearest: tuple[int, date] | None = None
+    for cue_position in positions:
+        for date_position, parsed_date in dates:
+            distance = abs(date_position - cue_position)
+            if distance <= 40 and (nearest is None or distance < nearest[0]):
+                nearest = (distance, parsed_date)
+    if nearest is None:
+        return "unverified"
+    return "expired" if nearest[1] < (today or date.today()) else "not_expired"
+
+
+def _source_dates(content: str) -> list[tuple[int, date]]:
+    patterns = (
+        r"(?P<year>20\d{2})[-/](?P<month>\d{1,2})[-/](?P<day>\d{1,2})",
+        r"(?P<year>20\d{2})年\s*(?P<month>\d{1,2})月\s*(?P<day>\d{1,2})日?",
+    )
+    found: list[tuple[int, date]] = []
+    for pattern in patterns:
+        for match in re.finditer(pattern, content):
+            try:
+                parsed = date(
+                    int(match.group("year")),
+                    int(match.group("month")),
+                    int(match.group("day")),
+                )
+            except ValueError:
+                continue
+            found.append((match.start(), parsed))
+    return found
 
 
 def _clean_url(value: Any) -> str:

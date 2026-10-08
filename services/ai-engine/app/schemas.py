@@ -4,6 +4,9 @@ from pydantic import BaseModel, Field
 
 
 Verdict = Literal["supports", "contradicts", "context", "unverified"]
+DeadlineStatus = Literal["expired", "not_expired", "not_stated", "unverified"]
+OfficialSourceStatus = Literal["verified", "unverified"]
+EvidenceStatus = Literal["available", "missing"]
 
 
 class SearchRequest(BaseModel):
@@ -22,6 +25,9 @@ class SearchResult(BaseModel):
     verdict: Verdict
     confidence: float = Field(ge=0, le=1)
     published_at: Optional[str] = None
+    deadline_status: DeadlineStatus = "unverified"
+    official_source_status: OfficialSourceStatus = "unverified"
+    evidence_status: EvidenceStatus = "missing"
 
 
 class SearchResponse(BaseModel):

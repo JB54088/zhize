@@ -33,7 +33,12 @@ async def search(payload: SearchRequest) -> SearchResponse:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
     # 小采 (provider) -> 小洗 (normalization and evidence extraction).
-    results = clean_and_ground_results(query, raw_results, payload.limit)
+    results = clean_and_ground_results(
+        query,
+        raw_results,
+        payload.limit,
+        official_source_domains=settings.official_source_domains,
+    )
     # 小验 / 小判 are optional LLM annotations; they are constrained to IDs and
     # literal quotes from provider records. Deterministic labels remain available
     # when no model credentials are configured.

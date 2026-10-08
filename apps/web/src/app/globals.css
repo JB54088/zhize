@@ -103,6 +103,11 @@ a { color: inherit; }
 .verdict-contradicts { color: #a3574c; background: #fbefed; }
 .verdict-context { color: #637292; background: #f0f2f8; }
 .verdict-unverified { color: #8c7446; background: #f8f3e8; }
+.result-status { padding: 4px 7px; border-radius: 5px; color: #8c7446; background: #f8f3e8; font-size: 10px; }
+.official-verified { color: #28714f; background: #eaf5ee; }
+.deadline-expired, .evidence-missing { color: #a3574c; background: #fbefed; }
+.deadline-not_expired { color: #28714f; background: #eaf5ee; }
+.verification-note { margin: 0 0 12px; padding: 10px 13px; border: 1px solid #eadfc7; border-radius: 8px; color: #7d6844; background: #fbf8f0; font-size: 11px; line-height: 1.7; }
 .result-content h3 { margin: 9px 0 0; font-size: 16px; font-weight: 600; line-height: 1.5; }
 .result-content h3 a { text-decoration: none; text-underline-offset: 3px; }
 .result-content h3 a:hover { color: var(--green); text-decoration: underline; }

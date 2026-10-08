@@ -84,6 +84,9 @@ def test_api_and_engine_share_grounded_search_result_schema() -> None:
         "match_reason",
         "verdict",
         "confidence",
+        "deadline_status",
+        "official_source_status",
+        "evidence_status",
     }
     api = read_contract("api.openapi.yaml")
     engine = read_contract("ai-engine.openapi.yaml")
@@ -93,6 +96,7 @@ def test_api_and_engine_share_grounded_search_result_schema() -> None:
     for schema in (api_result, engine_result):
         assert schema["type"] == "object"
         assert required_fields <= set(schema["properties"])
+        assert required_fields <= set(schema["required"])
         assert schema["properties"]["verdict"]["enum"] == [
             "supports",
             "contradicts",
@@ -101,5 +105,19 @@ def test_api_and_engine_share_grounded_search_result_schema() -> None:
         ]
         assert schema["properties"]["confidence"]["minimum"] == 0
         assert schema["properties"]["confidence"]["maximum"] == 1
+        assert schema["properties"]["deadline_status"]["enum"] == [
+            "expired",
+            "not_expired",
+            "not_stated",
+            "unverified",
+        ]
+        assert schema["properties"]["official_source_status"]["enum"] == [
+            "verified",
+            "unverified",
+        ]
+        assert schema["properties"]["evidence_status"]["enum"] == [
+            "available",
+            "missing",
+        ]
 
     assert set(api_result["properties"]) == set(engine_result["properties"])

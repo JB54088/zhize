@@ -26,6 +26,7 @@ SEARCH_PROVIDER=tavily TAVILY_API_KEY=your-local-key \
 | `TAVILY_API_KEY` | Tavily 搜索 API 密钥 |
 | `SEARCH_BASE_URL` | 可选，Tavily 搜索 API 地址覆盖；默认 `https://api.tavily.com/search` |
 | `SEARCH_TIMEOUT_SECONDS` | 可选，搜索请求超时；默认 30 秒 |
+| `OFFICIAL_SOURCE_DOMAINS` | 可选，逗号分隔的官方域名白名单；默认仅识别政府域名后缀 |
 | `LLM_BASE_URL` | 可选的大模型 OpenAI 兼容 API 根地址 |
 | `LLM_API_KEY` | 可选的大模型 API 密钥；本地兼容服务可留空 |
 | `LLM_MODEL` | 可选的大模型名称；未配置模型时使用确定性词项匹配 |
@@ -38,6 +39,7 @@ SEARCH_PROVIDER=tavily TAVILY_API_KEY=your-local-key \
 - **小洗**：校验 URL、规范化字段、去重，并从提供方正文截取证据。
 - **小验**：检查查询词项是否出现在来源正文；配置 LLM 后可对现有来源做受约束的辅助核验。
 - **小判**：输出 `supports`、`contradicts`、`context` 或 `unverified`、置信度及可解释匹配理由。无 LLM 时只给出 `context` 或 `unverified`，不把关键词重合夸大成支持结论。
+- **状态提示**：截止日期只在原文明确写出截止词和邻近日期时判断；无日期则标为未提及，含糊日期标为未核实。非政府来源只有在 `OFFICIAL_SOURCE_DOMAINS` 白名单中才标为官方已核实；无可引用正文会明确标注证据缺失。
 
 ## 检查
 
@@ -47,4 +49,3 @@ SEARCH_PROVIDER=tavily TAVILY_API_KEY=your-local-key \
 python -m unittest discover -s services/ai-engine/tests -v
 python -m compileall -q services/ai-engine/app
 ```
-

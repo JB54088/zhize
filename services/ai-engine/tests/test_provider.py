@@ -15,6 +15,7 @@ class ProviderTests(unittest.IsolatedAsyncioTestCase):
 
         async def handler(request):
             captured["url"] = str(request.url)
+            captured["authorization"] = request.headers.get("Authorization")
             captured["payload"] = await request.aread()
             return httpx.Response(
                 200,
@@ -26,6 +27,7 @@ class ProviderTests(unittest.IsolatedAsyncioTestCase):
             search_api_key="test-secret",
             search_base_url="https://search.example.test/v2/search",
             search_timeout_seconds=5,
+            official_source_domains=(),
             llm_api_key="",
             llm_model="",
             llm_base_url="https://api.openai.com/v1",
@@ -37,11 +39,11 @@ class ProviderTests(unittest.IsolatedAsyncioTestCase):
         results = await provider.search("a decision query", 4)
 
         self.assertEqual(captured["url"], "https://search.example.test/v2/search")
-        self.assertIn(b'"api_key":"test-secret"', captured["payload"])
+        self.assertEqual(captured["authorization"], "Bearer test-secret")
+        self.assertNotIn(b"test-secret", captured["payload"])
         self.assertIn(b'"query":"a decision query"', captured["payload"])
         self.assertEqual(results[0]["title"], "Live source")
 
 
 if __name__ == "__main__":
     unittest.main()
-

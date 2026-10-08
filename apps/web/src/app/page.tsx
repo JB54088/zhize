@@ -4,6 +4,9 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 type TaskStatus = "queued" | "running" | "completed" | "failed";
 type Verdict = "supports" | "contradicts" | "context" | "unverified";
+type DeadlineStatus = "expired" | "not_expired" | "not_stated" | "unverified";
+type OfficialSourceStatus = "verified" | "unverified";
+type EvidenceStatus = "available" | "missing";
 
 type SearchResult = {
   id: string;
@@ -16,6 +19,9 @@ type SearchResult = {
   verdict: Verdict;
   confidence: number;
   published_at?: string | null;
+  deadline_status: DeadlineStatus;
+  official_source_status: OfficialSourceStatus;
+  evidence_status: EvidenceStatus;
 };
 
 type SearchTask = {
@@ -43,6 +49,12 @@ const verdictCopy: Record<Verdict, string> = {
   contradicts: "与判断相悖",
   context: "提供背景",
   unverified: "尚未核实",
+};
+
+const deadlineCopy: Record<Exclude<DeadlineStatus, "not_stated">, string> = {
+  expired: "已截止",
+  not_expired: "截止日期未到",
+  unverified: "截止状态未核实",
 };
 
 function isSearchTask(value: unknown): value is SearchTask {
@@ -158,6 +170,9 @@ export default function Home() {
   const status = task ? statusCopy[task.status] : null;
   const active = task?.status === "queued" || task?.status === "running";
   const showResults = task?.status === "completed" && task.results.length > 0;
+  const noVerifiedOfficialSource = showResults && task.results.every(
+    (result) => result.official_source_status !== "verified",
+  );
 
   return (
     <main className="site-shell">
@@ -254,6 +269,11 @@ export default function Home() {
                 <span className="result-count">找到 {task.results.length} 条来源</span>
                 <span className="results-caveat">信息摘要供参考，判断前请查看原始来源。</span>
               </div>
+              {noVerifiedOfficialSource && (
+                <div className="verification-note" role="status">
+                  当前结果中未核实到已知官方来源；涉及报名、资格或截止时间时，请以官方渠道为准。
+                </div>
+              )}
               <div className="result-list">
                 {task.results.map((result, index) => {
                   const publishedAt = formatDate(result.published_at);
@@ -267,6 +287,17 @@ export default function Home() {
                           <span className="source-name">{result.source_name || "未知来源"}</span>
                           {publishedAt && <><span className="meta-separator">·</span><time>{publishedAt}</time></>}
                           <span className={`verdict verdict-${result.verdict}`}>{verdictCopy[result.verdict] ?? verdictCopy.unverified}</span>
+                          <span className={`result-status official-${result.official_source_status}`}>
+                            {result.official_source_status === "verified" ? "官方域名已核实" : "官方来源未核实"}
+                          </span>
+                          {result.deadline_status !== "not_stated" && (
+                            <span className={`result-status deadline-${result.deadline_status}`}>
+                              {deadlineCopy[result.deadline_status]}
+                            </span>
+                          )}
+                          {result.evidence_status === "missing" && (
+                            <span className="result-status evidence-missing">证据缺失</span>
+                          )}
                         </div>
                         <h3>
                           {sourceUrl ? <a href={sourceUrl} target="_blank" rel="noreferrer">{result.title} <span aria-hidden="true">↗</span></a> : result.title}
