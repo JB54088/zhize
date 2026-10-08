@@ -1,0 +1,96 @@
+openapi: 3.1.0
+info:
+  title: 知择 AI 引擎 API
+  version: 0.1.0
+servers:
+  - url: http://127.0.0.1:8001
+paths:
+  /health:
+    get:
+      summary: AI 引擎健康检查
+      responses:
+        "200":
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service]
+                properties:
+                  status: { type: string, const: ok }
+                  service: { type: string, const: zhize-ai-engine }
+  /api/v1/verify:
+    post:
+      summary: 基于给定来源生成结构化核验结果
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerificationRequest"
+      responses:
+        "200":
+          description: 核验结果；无来源时返回 insufficient_evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationResponse"
+        "422":
+          description: 请求格式无效
+        "503":
+          description: 大模型 API 尚未配置
+        "502":
+          description: 大模型 API 错误或返回格式无效
+components:
+  schemas:
+    Source:
+      type: object
+      required: [id, title, snippet]
+      properties:
+        id: { type: string, minLength: 1 }
+        title: { type: string, minLength: 1 }
+        url: { type: [string, "null"], format: uri }
+        snippet: { type: string }
+        published_at: { type: [string, "null"], format: date-time }
+    VerificationRequest:
+      type: object
+      required: [question]
+      properties:
+        question: { type: string, minLength: 1, maxLength: 4000 }
+        sources:
+          type: array
+          maxItems: 50
+          items: { $ref: "#/components/schemas/Source" }
+    Claim:
+      type: object
+      required: [text, verdict, confidence]
+      properties:
+        text: { type: string }
+        verdict:
+          type: string
+          enum: [supported, mixed, refuted, insufficient_evidence]
+        confidence: { type: number, minimum: 0, maximum: 1 }
+    Citation:
+      type: object
+      required: [source_id, quote]
+      properties:
+        source_id: { type: string }
+        quote: { type: string }
+        url: { type: [string, "null"], format: uri }
+        title: { type: [string, "null"] }
+    VerificationResponse:
+      type: object
+      required: [verdict, summary, confidence, claims, citations]
+      properties:
+        verdict:
+          type: string
+          enum: [supported, mixed, refuted, insufficient_evidence]
+        summary: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        claims:
+          type: array
+          items: { $ref: "#/components/schemas/Claim" }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/Citation" }
+
