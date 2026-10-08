@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -10,7 +9,7 @@ Verdict = Literal["supports", "contradicts", "context", "unverified"]
 
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=4000)
-    limit: int = Field(default=10, ge=1, le=50)
+    limit: int = Field(default=10, ge=1, le=20)
 
     @field_validator("query")
     @classmethod
@@ -38,7 +37,7 @@ class SearchResult(BaseModel):
     match_reason: str
     verdict: Verdict
     confidence: float = Field(ge=0, le=1)
-    published_at: datetime | None = None
+    published_at: str | None = None
 
 
 class EngineSearchResponse(BaseModel):

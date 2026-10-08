@@ -8,13 +8,13 @@ Verdict = Literal["supports", "contradicts", "context", "unverified"]
 
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=4000)
-    limit: int = Field(default=8, ge=1, le=20)
+    limit: int = Field(default=10, ge=1, le=20)
 
 
 class SearchResult(BaseModel):
     id: str = Field(min_length=1)
     title: str = Field(min_length=1)
-    url: str
+    url: str = Field(min_length=1)
     source_name: str = Field(min_length=1)
     snippet: str
     evidence: str
@@ -27,4 +27,3 @@ class SearchResult(BaseModel):
 class SearchResponse(BaseModel):
     query: str
     results: list[SearchResult]
-

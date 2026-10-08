@@ -62,6 +62,17 @@ def test_ai_engine_contract_accepts_query_and_returns_results() -> None:
     assert {"query", "results"} <= set(response["properties"])
 
 
+def test_backend_and_engine_search_limits_match() -> None:
+    api = read_contract("api.openapi.yaml")
+    engine = read_contract("ai-engine.openapi.yaml")
+    api_limit = request_schema(api, "/api/v1/search")["properties"]["limit"]
+    engine_limit = request_schema(engine, "/api/v1/search")["properties"]["limit"]
+
+    assert api_limit["minimum"] == engine_limit["minimum"]
+    assert api_limit["maximum"] == engine_limit["maximum"]
+    assert api_limit["default"] == engine_limit["default"]
+
+
 def test_api_and_engine_share_grounded_search_result_schema() -> None:
     required_fields = {
         "id",
