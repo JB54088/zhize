@@ -1,6 +1,5 @@
 import hashlib
 import re
-from datetime import date
 from typing import Any, Optional
 from urllib.parse import urlparse
 
@@ -52,6 +51,12 @@ def clean_and_ground_results(
             match_reason = "搜索源未返回可引用的正文片段，当前无法核验。"
 
         parsed = urlparse(url)
+        hostname = parsed.hostname or ""
+        source_status = _initial_source_status(
+            hostname,
+            official_source_domains,
+            has_evidence=bool(evidence),
+        )
         cleaned.append(
             SearchResult(
                 id=hashlib.sha256(url.encode("utf-8")).hexdigest()[:20],
@@ -64,15 +69,29 @@ def clean_and_ground_results(
                 verdict=verdict,
                 confidence=confidence,
                 published_at=_clean_optional_text(item.get("published_date")),
-                deadline_status=_deadline_status(content),
-                official_source_status=_official_source_status(
-                    parsed.hostname or "", official_source_domains
-                ),
+                official_source_url=None,
+                verified_fields=[],
+                unverified_fields=[
+                    "project_name",
+                    "purchasing_unit",
+                    "published_at",
+                    "budget",
+                    "deadline",
+                    "evidence",
+                ],
+                purchasing_unit=None,
+                budget=None,
+                deadline_at=None,
+                # Provider metadata and third-party text are leads, not verified
+                # procurement facts. Official verification fills this later.
+                deadline_status="unverified",
+                official_source_status=source_status,
                 evidence_status="available" if evidence else "missing",
+                procurement_category="unclear",
+                match_status="unverified",
+                mismatch_reason=None,
             )
         )
-        if len(cleaned) >= limit:
-            break
     return cleaned
 
 
@@ -134,62 +153,19 @@ def _clean_optional_text(value: Any) -> Optional[str]:
     return text or None
 
 
-def _official_source_status(
-    hostname: str, configured_domains: tuple[str, ...]
+def _initial_source_status(
+    hostname: str,
+    configured_domains: tuple[str, ...],
+    *,
+    has_evidence: bool,
 ) -> str:
     host = hostname.lower().removeprefix("www.").rstrip(".")
-    if host.endswith((".gov", ".gov.cn", ".mil")):
-        return "verified"
-    if any(host == domain or host.endswith(f".{domain}") for domain in configured_domains):
-        return "verified"
-    return "unverified"
-
-
-def _deadline_status(content: str, today: date | None = None) -> str:
-    cues = (
-        "截止", "截至", "有效期至", "最后申请日期", "最后报名日期",
-        "deadline", "due date", "expires on", "expiration date", "closes on",
+    potential_official = host.endswith((".gov", ".gov.cn", ".mil")) or any(
+        host == domain or host.endswith(f".{domain}") for domain in configured_domains
     )
-    lowered = content.lower()
-    positions = [position for cue in cues if (position := lowered.find(cue)) >= 0]
-    if not positions:
-        return "not_stated"
-
-    dates = _source_dates(content)
-    if not dates:
-        return "unverified"
-
-    # Require an explicit deadline cue and a date close to it. This avoids
-    # treating an unrelated publication date as an expiry date.
-    nearest: tuple[int, date] | None = None
-    for cue_position in positions:
-        for date_position, parsed_date in dates:
-            distance = abs(date_position - cue_position)
-            if distance <= 40 and (nearest is None or distance < nearest[0]):
-                nearest = (distance, parsed_date)
-    if nearest is None:
-        return "unverified"
-    return "expired" if nearest[1] < (today or date.today()) else "not_expired"
-
-
-def _source_dates(content: str) -> list[tuple[int, date]]:
-    patterns = (
-        r"(?P<year>20\d{2})[-/](?P<month>\d{1,2})[-/](?P<day>\d{1,2})",
-        r"(?P<year>20\d{2})年\s*(?P<month>\d{1,2})月\s*(?P<day>\d{1,2})日?",
-    )
-    found: list[tuple[int, date]] = []
-    for pattern in patterns:
-        for match in re.finditer(pattern, content):
-            try:
-                parsed = date(
-                    int(match.group("year")),
-                    int(match.group("month")),
-                    int(match.group("day")),
-                )
-            except ValueError:
-                continue
-            found.append((match.start(), parsed))
-    return found
+    if not has_evidence or potential_official:
+        return "insufficient_evidence"
+    return "third_party"
 
 
 def _clean_url(value: Any) -> str:

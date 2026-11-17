@@ -5,7 +5,7 @@ import sys
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from app.provider import TavilySearchProvider
+from app.provider import TavilySearchProvider, create_search_providers, register_search_provider
 from app.settings import Settings
 
 
@@ -43,6 +43,25 @@ class ProviderTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(b"test-secret", captured["payload"])
         self.assertIn(b'"query":"a decision query"', captured["payload"])
         self.assertEqual(results[0]["title"], "Live source")
+
+    async def test_configured_provider_registry_builds_multiple_parallel_adapters(self):
+        settings = Settings(
+            search_provider="tavily",
+            search_api_key="test-secret",
+            search_base_url="https://search.example.test/v2/search",
+            search_timeout_seconds=5,
+            official_source_domains=(),
+            llm_api_key="",
+            llm_model="",
+            llm_base_url="https://api.openai.com/v1",
+            search_providers=("tavily", "test_plugin"),
+        )
+        register_search_provider("test_plugin", lambda _settings: object())
+
+        providers = create_search_providers(settings)
+
+        self.assertEqual([name for name, _provider in providers], ["tavily", "test_plugin"])
+        self.assertIsInstance(providers[0][1], TavilySearchProvider)
 
 
 if __name__ == "__main__":

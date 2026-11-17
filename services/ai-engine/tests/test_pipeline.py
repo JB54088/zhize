@@ -8,7 +8,7 @@ from app.pipeline import apply_grounded_annotations, clean_and_ground_results
 
 
 class PipelineTests(unittest.TestCase):
-    def test_deadline_source_evidence_and_official_source_statuses(self):
+    def test_provider_domain_alone_never_verifies_procurement_fields(self):
         yesterday = date.today() - timedelta(days=1)
         tomorrow = date.today() + timedelta(days=1)
         results = clean_and_ground_results(
@@ -34,14 +34,16 @@ class PipelineTests(unittest.TestCase):
             official_source_domains=("example.org",),
         )
 
-        self.assertEqual(results[0].deadline_status, "expired")
-        self.assertEqual(results[0].official_source_status, "verified")
+        self.assertEqual(results[0].deadline_status, "unverified")
+        self.assertEqual(results[0].official_source_status, "insufficient_evidence")
         self.assertEqual(results[0].evidence_status, "available")
-        self.assertEqual(results[1].deadline_status, "not_expired")
-        self.assertEqual(results[1].official_source_status, "verified")
-        self.assertEqual(results[2].deadline_status, "not_stated")
-        self.assertEqual(results[2].official_source_status, "unverified")
+        self.assertEqual(results[1].deadline_status, "unverified")
+        self.assertEqual(results[1].official_source_status, "insufficient_evidence")
+        self.assertEqual(results[2].deadline_status, "unverified")
+        self.assertEqual(results[2].official_source_status, "insufficient_evidence")
         self.assertEqual(results[2].evidence_status, "missing")
+        self.assertNotIn("deadline", results[0].verified_fields)
+        self.assertIn("deadline", results[0].unverified_fields)
 
     def test_ambiguous_deadline_is_unverified_and_unrelated_date_is_not_deadline(self):
         today = date.today()
@@ -62,7 +64,7 @@ class PipelineTests(unittest.TestCase):
             limit=2,
         )
         self.assertEqual(results[0].deadline_status, "unverified")
-        self.assertEqual(results[1].deadline_status, "not_stated")
+        self.assertEqual(results[1].deadline_status, "unverified")
 
     def test_evidence_selects_the_provider_passage_with_query_matches(self):
         source_text = (

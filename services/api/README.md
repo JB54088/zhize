@@ -1,8 +1,9 @@
 # 知择 API service
 
-FastAPI service for creating and polling V0.1 search tasks. It forwards searches
-to the configured AI engine and persists task status and engine-returned results
-with SQLAlchemy. It does not generate search results itself.
+FastAPI service for creating and polling search tasks. It forwards requests to
+the configured AI engine, persists task status, source records and compact
+cross-domain result cards with SQLAlchemy. It does not generate search results
+itself.
 
 ## Local setup
 
@@ -23,10 +24,15 @@ the local AI-engine service. No production credentials or database are needed.
 
 ## API
 
-- `POST /api/v1/search` accepts `{ "query": "...", "limit": 10 }` and returns
-  HTTP 202 with a task ID and `queued` status.
-- `GET /api/v1/search/{task_id}` returns the stored query, status, engine results,
-  and an optional safe error message.
+- `POST /api/v1/search` accepts `{ "query": "...", "candidate_limit": 50 }`
+  and returns HTTP 202 with a task ID and `queued` status. Candidate collection
+  is bounded from 1 to 100 and is independent from display pagination. The old
+  `limit` request field is accepted during migration but is deprecated and no
+  longer truncates the candidate pool.
+- `GET /api/v1/search/{task_id}?page=1&page_size=10` returns ranked
+  `ResultCard` objects, with a default page size of 10 and a `total_results`
+  count covering all retained candidates. Full bounded source records remain in
+  local task storage and are not included in the public task response.
 - `GET /health` reports service health.
 
 The API contract is maintained at `contracts/api.openapi.yaml`.
@@ -35,6 +41,7 @@ The API contract is maintained at `contracts/api.openapi.yaml`.
 
 Task execution uses FastAPI in-process background work. Tasks survive process
 restarts because records are persisted, but queued/running work is not resumed
-after a restart, and there is no distributed worker, retry policy, task expiry,
-or migration framework yet. `create_all` is suitable for the initial local
-schema only; use managed migrations before evolving a shared database schema.
+after a restart, and there is no distributed worker, retry policy, or task
+expiry. Startup applies additive nullable columns for local compatibility and
+backfills old result JSON into source-record storage. Use managed migrations
+before evolving a shared database schema.

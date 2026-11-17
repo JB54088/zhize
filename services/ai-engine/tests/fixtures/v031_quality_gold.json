@@ -1,0 +1,93 @@
+{
+  "labeling_note": "人工按证据中明确的岗位条件与用户硬性要求逐条标注。样本用于回归保护，不代表线上总体准确率。",
+  "employment_query": "我是2027届毕业生，电子信息工程专业，帮我寻找符合条件且正在招聘的校招公司。",
+  "employment_cases": [
+    {
+      "id": "gold-job-match",
+      "title": "星海科技2027届软件工程师校招",
+      "official_source_title": "星海科技 2027届软件工程师岗位",
+      "official_source_url": "https://jobs.xinghai.example/position/REQ-2027-01",
+      "official_evidence_detail": "职位名称：软件工程师\n专业要求：电子信息工程专业\n招收2027届毕业生\n招聘中\n截止时间：2099-05-01\n投递入口：https://jobs.xinghai.example/apply/REQ-2027-01",
+      "fields": {
+        "graduate_cohort": {"value": "2027届", "status": "verified", "quote": "招收2027届毕业生"},
+        "major": {"value": "电子信息工程", "status": "verified", "quote": "专业要求：电子信息工程专业"},
+        "open_status": {"value": "招聘中", "status": "verified", "quote": "招聘中"},
+        "deadline": {"value": "2099-05-01", "status": "verified", "quote": "截止时间：2099-05-01"},
+        "application_url": {"value": "https://jobs.xinghai.example/apply/REQ-2027-01", "status": "verified", "quote": "投递入口：https://jobs.xinghai.example/apply/REQ-2027-01"}
+      },
+      "expected_decision": "recommended",
+      "expected_field_states": {"graduate_cohort": "verified", "major": "verified", "open_status": "verified", "deadline": "verified", "application_url": "verified"}
+    },
+    {
+      "id": "gold-job-wrong-major",
+      "title": "星海科技2027届软件工程师校招",
+      "official_source_title": "星海科技 2027届软件工程师岗位",
+      "official_source_url": "https://jobs.xinghai.example/position/REQ-2027-02",
+      "official_evidence_detail": "职位名称：软件工程师\n专业要求：计算机科学与技术专业\n招收2027届毕业生\n招聘中\n截止时间：2099-05-01\n投递入口：https://jobs.xinghai.example/apply/REQ-2027-02",
+      "fields": {
+        "graduate_cohort": {"value": "2027届", "status": "verified", "quote": "招收2027届毕业生"},
+        "major": {"value": "计算机科学与技术", "status": "verified", "quote": "专业要求：计算机科学与技术专业"},
+        "open_status": {"value": "招聘中", "status": "verified", "quote": "招聘中"},
+        "deadline": {"value": "2099-05-01", "status": "verified", "quote": "截止时间：2099-05-01"},
+        "application_url": {"value": "https://jobs.xinghai.example/apply/REQ-2027-02", "status": "verified", "quote": "投递入口：https://jobs.xinghai.example/apply/REQ-2027-02"}
+      },
+      "expected_decision": "not_matched",
+      "expected_field_states": {"graduate_cohort": "verified", "major": "verified", "open_status": "verified", "deadline": "verified", "application_url": "verified"}
+    },
+    {
+      "id": "gold-job-expired",
+      "title": "星海科技2027届软件工程师校招",
+      "official_source_title": "星海科技 2027届软件工程师岗位",
+      "official_source_url": "https://jobs.xinghai.example/position/REQ-2027-03",
+      "official_evidence_detail": "职位名称：软件工程师\n专业要求：电子信息工程专业\n招收2027届毕业生\n招聘结束\n截止时间：2020-05-01\n投递入口：https://jobs.xinghai.example/apply/REQ-2027-03",
+      "fields": {
+        "graduate_cohort": {"value": "2027届", "status": "verified", "quote": "招收2027届毕业生"},
+        "major": {"value": "电子信息工程", "status": "verified", "quote": "专业要求：电子信息工程专业"},
+        "open_status": {"value": "已截止", "status": "verified", "quote": "招聘结束"},
+        "deadline": {"value": "2020-05-01", "status": "verified", "quote": "截止时间：2020-05-01"},
+        "application_url": {"value": "https://jobs.xinghai.example/apply/REQ-2027-03", "status": "verified", "quote": "投递入口：https://jobs.xinghai.example/apply/REQ-2027-03"}
+      },
+      "expected_decision": "not_matched",
+      "expected_field_states": {"graduate_cohort": "verified", "major": "verified", "open_status": "verified", "deadline": "verified", "application_url": "verified"}
+    },
+    {
+      "id": "gold-job-open-unknown",
+      "title": "星海科技2027届软件工程师校招",
+      "official_source_title": "星海科技 2027届软件工程师岗位",
+      "official_source_url": "https://jobs.xinghai.example/position/REQ-2027-04",
+      "official_evidence_detail": "职位名称：软件工程师\n专业要求：电子信息工程专业\n招收2027届毕业生\n截止时间和开放状态未在公告中找到",
+      "fields": {
+        "graduate_cohort": {"value": "2027届", "status": "verified", "quote": "招收2027届毕业生"},
+        "major": {"value": "电子信息工程", "status": "verified", "quote": "专业要求：电子信息工程专业"},
+        "open_status": {"value": null, "status": "missing", "quote": null},
+        "deadline": {"value": null, "status": "missing", "quote": null},
+        "application_url": {"value": null, "status": "missing", "quote": null}
+      },
+      "expected_decision": "needs_verification",
+      "expected_field_states": {"graduate_cohort": "verified", "major": "verified", "open_status": "missing", "deadline": "missing", "application_url": "missing"}
+    }
+  ],
+  "procurement_case": {
+    "query": "寻找福建省近期仍在招标且明确涉及AI系统建设的政府采购项目",
+    "record": {
+      "id": "gold-procurement-ai-system",
+      "title": "福建省人工智能系统建设项目采购公告",
+      "url": "https://search.example/notice",
+      "snippet": "政府采购公告",
+      "evidence": "采购内容：人工智能系统建设",
+      "raw_text": "采购内容：人工智能系统建设",
+      "official_source_title": "福建省人工智能系统建设项目采购公告",
+      "official_source_url": "https://procurement.gov.cn/notice/2027-01",
+      "official_source_status": "verified",
+      "field_verification": {
+        "region": {"value": "福建省", "status": "verified", "evidence_url": "https://procurement.gov.cn/notice/2027-01", "quote": "项目地点：福建省福州市"},
+        "open_status": {"value": "未截止", "status": "verified", "evidence_url": "https://procurement.gov.cn/notice/2027-01", "quote": "投标截止时间：2099-01-01"},
+        "project_name": {"value": "福建省人工智能系统建设项目", "status": "verified", "evidence_url": "https://procurement.gov.cn/notice/2027-01", "quote": "项目名称：福建省人工智能系统建设项目"},
+        "evidence": {"value": "人工智能系统建设", "status": "verified", "evidence_url": "https://procurement.gov.cn/notice/2027-01", "quote": "采购内容：人工智能系统建设"}
+      },
+      "confidence": 0.8
+    },
+    "expected_decision": "recommended",
+    "expected_field_states": {"region": "verified", "open_status": "verified", "official_category": "verified"}
+  }
+}
